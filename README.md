@@ -34,10 +34,6 @@ xcode-select --install
 # Call from package root directory
 ./build-app.sh
 
-# Specify a custom directory for session and log data
-# This can be updated later in the app if desired
-TIMESHEET_DIR=/path/to/logs ./build-app.sh
-
 # Launch
 open TimeTracker.app
 ```
@@ -56,13 +52,25 @@ Then build and run the `TimeTracker` scheme (Cmd+R).
 
 ### Data locations
 
-By default, data is stored under `~/Library/Application Support/TimeTracker/`. To change this, set `TIMESHEET_DIR` at build time (see above).
+By default, data is stored under `~/Library/Application Support/TimeTracker/`. To use a custom directory, create a config file at `~/.config/timetracker/config.json`:
+
+```json
+{
+  "timesheetDir": "/path/to/your/data"
+}
+```
+
+The app resolves the base directory in this order:
+1. `~/.config/timetracker/config.json` (`timesheetDir` key)
+2. `TIMESHEET_DIR` environment variable
+3. `~/Library/Application Support/TimeTracker/` (default)
 
 | File | Path |
 |------|------|
-| Active session | `<TIMESHEET_DIR>/session.json` |
-| Custom labels | `<TIMESHEET_DIR>/labels.json` |
-| Session logs | `<TIMESHEET_DIR>/logs/<YYYY-MM-DD>.json` |
+| Active session | `<base>/session.json` |
+| Custom labels | `<base>/labels.json` |
+| Independent labels | `<base>/independent_labels.json` |
+| Session logs | `<base>/logs/<YYYY-MM-DD>.json` |
 
 The log output directory can also be overridden at runtime via the Settings panel (stored in UserDefaults).
 
@@ -97,8 +105,8 @@ TimeTracker/
 │   ├── LabelManagerView.swift        # Floating window for adding, renaming, and deleting labels
 │   └── SettingsView.swift            # Time increment amount, custom log directory, manage labels
 ├── Services/
-│   ├── PersistenceService.swift      # JSON read/write to Application Support/TimeTracker/;
-│   │                                 #   supports custom log directory via UserDefaults
+│   ├── PersistenceService.swift      # JSON read/write; resolves base dir from
+│   │                                 #   ~/.config/timetracker/config.json, env var, or App Support
 │   ├── SleepWakeService.swift        # NSWorkspace sleep/wake + screen sleep/wake observer
 │   ├── SessionLogger.swift           # Builds SessionLog from session, writes logs, recalculates
 │   │                                 #   adjusted hours in existing log files

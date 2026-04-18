@@ -45,7 +45,6 @@ fastlane/test_output
 *.dSYM.zip
 *.dSYM
 *.app
-!*.app/
 
 # Playgrounds
 timeline.xctimeline
