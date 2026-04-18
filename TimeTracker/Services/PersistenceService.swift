@@ -33,19 +33,35 @@ final class PersistenceService: SessionPersisting, @unchecked Sendable {
         self.baseURL = baseURL
     }
 
-    /// Convenience: resolves the log directory from the TIMESHEET_DIR environment variable,
-    /// falling back to ~/Library/Application Support/TimeTracker.
-    convenience init() {
-        let url: URL
-        if let envPath = ProcessInfo.processInfo.environment["TIMESHEET_DIR"], !envPath.isEmpty {
-            url = URL(fileURLWithPath: envPath, isDirectory: true)
-        } else {
-            let appSupport = FileManager.default.urls(
-                for: .applicationSupportDirectory, in: .userDomainMask
-            ).first!
-            url = appSupport.appendingPathComponent("TimeTracker", isDirectory: true)
+    static let configFileURL: URL = {
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        return home
+            .appendingPathComponent(".config", isDirectory: true)
+            .appendingPathComponent("timetracker", isDirectory: true)
+            .appendingPathComponent("config.json")
+    }()
+
+    private struct ConfigFile: Decodable {
+        var timesheetDir: String?
+    }
+
+    static func resolvedBaseURL(configURL: URL = configFileURL, environment: [String: String] = ProcessInfo.processInfo.environment) -> URL {
+        if let config = try? Data(contentsOf: configURL),
+           let parsed = try? decoder.decode(ConfigFile.self, from: config),
+           let dir = parsed.timesheetDir, !dir.isEmpty {
+            return URL(fileURLWithPath: dir, isDirectory: true)
         }
-        self.init(baseURL: url)
+        if let envPath = environment["TIMESHEET_DIR"], !envPath.isEmpty {
+            return URL(fileURLWithPath: envPath, isDirectory: true)
+        }
+        let appSupport = FileManager.default.urls(
+            for: .applicationSupportDirectory, in: .userDomainMask
+        ).first!
+        return appSupport.appendingPathComponent("TimeTracker", isDirectory: true)
+    }
+
+    convenience init() {
+        self.init(baseURL: Self.resolvedBaseURL())
     }
 
     // MARK: - Directory Setup

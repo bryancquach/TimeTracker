@@ -1,12 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
-# Optional: specify a custom log directory via environment variable.
-#   TIMESHEET_DIR=/path/to/logs ./build-app.sh
-# The app reads TIMESHEET_DIR at runtime from the environment.
-# To bake it into the .app bundle, an Info.plist LSEnvironment entry
-# or a wrapper script can be used (see below).
-TIMESHEET_DIR="${TIMESHEET_DIR:-}"
+# The app reads its base directory from ~/.config/timetracker/config.json at
+# runtime (key: "timesheetDir"), falling back to the TIMESHEET_DIR environment
+# variable, then ~/Library/Application Support/TimeTracker.
 
 # Build the executable in release mode
 swift build -c release 2>&1
@@ -30,13 +27,6 @@ cp "${BUILD_DIR}/${APP_NAME}" "${MACOS}/${APP_NAME}"
 
 # Copy Info.plist
 cp "TimeTracker/Info.plist" "${CONTENTS}/Info.plist"
-
-# Bake TIMESHEET_DIR into the bundle via LSEnvironment if specified
-if [ -n "${TIMESHEET_DIR}" ]; then
-    /usr/libexec/PlistBuddy -c "Add :LSEnvironment dict" "${CONTENTS}/Info.plist" 2>/dev/null || true
-    /usr/libexec/PlistBuddy -c "Add :LSEnvironment:TIMESHEET_DIR string ${TIMESHEET_DIR}" "${CONTENTS}/Info.plist" 2>/dev/null || \
-    /usr/libexec/PlistBuddy -c "Set :LSEnvironment:TIMESHEET_DIR ${TIMESHEET_DIR}" "${CONTENTS}/Info.plist"
-fi
 
 # Generate .icns from the app icon PNG
 ICON_SRC="TimeTracker/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png"

@@ -14,6 +14,67 @@ struct PersistenceServiceTests {
         return (service, dir)
     }
 
+    @Test("resolvedBaseURL falls back to Application Support when no config or env var exists")
+    func resolvedBaseURLDefault() throws {
+        let bogusConfig = FileManager.default.temporaryDirectory
+            .appendingPathComponent("nonexistent-\(UUID().uuidString).json")
+        let url = PersistenceService.resolvedBaseURL(configURL: bogusConfig, environment: [:])
+        let appSupport = FileManager.default.urls(
+            for: .applicationSupportDirectory, in: .userDomainMask
+        ).first!.appendingPathComponent("TimeTracker", isDirectory: true)
+        #expect(url == appSupport)
+    }
+
+    @Test("resolvedBaseURL uses config file timesheetDir when present")
+    func resolvedBaseURLFromConfigFile() throws {
+        let tmpDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("TimeTrackerTests-config-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: tmpDir, withIntermediateDirectories: true)
+        let configURL = tmpDir.appendingPathComponent("config.json")
+        let targetDir = tmpDir.appendingPathComponent("my-timesheets")
+        let json = """
+        { "timesheetDir": "\(targetDir.path)" }
+        """
+        try json.data(using: .utf8)!.write(to: configURL, options: .atomic)
+
+        let url = PersistenceService.resolvedBaseURL(configURL: configURL, environment: [:])
+        #expect(url.path == targetDir.path)
+    }
+
+    @Test("resolvedBaseURL prefers config file over environment variable")
+    func resolvedBaseURLConfigOverEnv() throws {
+        let tmpDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("TimeTrackerTests-priority-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: tmpDir, withIntermediateDirectories: true)
+        let configURL = tmpDir.appendingPathComponent("config.json")
+        let configDir = tmpDir.appendingPathComponent("from-config")
+        let json = """
+        { "timesheetDir": "\(configDir.path)" }
+        """
+        try json.data(using: .utf8)!.write(to: configURL, options: .atomic)
+
+        let url = PersistenceService.resolvedBaseURL(
+            configURL: configURL,
+            environment: ["TIMESHEET_DIR": "/some/env/path"]
+        )
+        #expect(url.path == configDir.path)
+    }
+
+    @Test("resolvedBaseURL falls back to env var when config file has no timesheetDir")
+    func resolvedBaseURLEnvFallback() throws {
+        let tmpDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("TimeTrackerTests-envfb-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: tmpDir, withIntermediateDirectories: true)
+        let configURL = tmpDir.appendingPathComponent("config.json")
+        try "{}".data(using: .utf8)!.write(to: configURL, options: .atomic)
+
+        let url = PersistenceService.resolvedBaseURL(
+            configURL: configURL,
+            environment: ["TIMESHEET_DIR": "/env/path"]
+        )
+        #expect(url == URL(fileURLWithPath: "/env/path", isDirectory: true))
+    }
+
     @Test("ensureDirectories creates base and logs directories")
     func ensureDirectories() throws {
         let (_, dir) = try Self.makeTempService()
