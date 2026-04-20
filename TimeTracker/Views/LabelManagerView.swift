@@ -55,6 +55,9 @@ struct LabelManagerView: View {
                 ForEach(viewModel.labels) { label in
                     LabelRow(label: label, viewModel: viewModel)
                 }
+                .onMove { source, destination in
+                    viewModel.moveLabel(from: source, to: destination)
+                }
             }
             .listStyle(.plain)
 

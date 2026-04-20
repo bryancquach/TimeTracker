@@ -310,6 +310,11 @@ final class TimerViewModel {
         saveLabels()
     }
 
+    func moveLabel(from source: IndexSet, to destination: Int) {
+        labels.move(fromOffsets: source, toOffset: destination)
+        saveLabels()
+    }
+
     func deleteLabel(id: String) {
         guard let index = labels.firstIndex(where: { $0.id == id }) else { return }
         labels.remove(at: index)
