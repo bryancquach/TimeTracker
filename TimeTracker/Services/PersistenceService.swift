@@ -121,6 +121,13 @@ final class PersistenceService: SessionPersisting, @unchecked Sendable {
 
     // MARK: - Logs
 
+    func loadLog(for day: String) throws -> SessionLog? {
+        let url = logsDirectoryURL.appendingPathComponent("\(day).json")
+        guard FileManager.default.fileExists(atPath: url.path) else { return nil }
+        let data = try Data(contentsOf: url)
+        return try Self.decoder.decode(SessionLog.self, from: data)
+    }
+
     func saveLog(_ log: SessionLog) throws {
         let data = try Self.encoder.encode(log)
         let url = logsDirectoryURL.appendingPathComponent("\(log.day).json")

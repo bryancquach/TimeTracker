@@ -10,6 +10,7 @@ protocol SessionPersisting: Sendable {
     func saveLabels(_ labels: [TimerLabel]) throws
     func loadIndependentLabels() throws -> [IndependentTimerLabel]?
     func saveIndependentLabels(_ labels: [IndependentTimerLabel]) throws
+    func loadLog(for day: String) throws -> SessionLog?
     func loadAllLogs() throws -> [SessionLog]
     func clearAllData() throws
 }

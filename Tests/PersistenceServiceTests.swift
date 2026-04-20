@@ -191,4 +191,41 @@ struct PersistenceServiceTests {
         #expect(decoded.day == "2026-04-10")
         #expect(decoded.totalHours == 1.0)
     }
+
+    @Test("loadLog returns nil for missing day")
+    func loadLogMissing() throws {
+        let (service, _) = try Self.makeTempService()
+        let result = try service.loadLog(for: "2026-01-01")
+        #expect(result == nil)
+    }
+
+    @Test("loadLog returns decoded log for existing day")
+    func loadLogExists() throws {
+        let (service, _) = try Self.makeTempService()
+        let entry = SessionLogEntry(hours: 2.0, adjustedHours: 8.0)
+        let log = SessionLog(
+            day: "2026-04-15",
+            totalHours: 2.0,
+            entries: ["project_1": entry],
+            loggedAt: Date()
+        )
+        try service.saveLog(log)
+
+        let loaded = try service.loadLog(for: "2026-04-15")
+        #expect(loaded != nil)
+        #expect(loaded?.day == "2026-04-15")
+        #expect(loaded?.totalHours == 2.0)
+        #expect(loaded?.entries["project_1"]?.hours == 2.0)
+    }
+
+    @Test("loadLog throws for corrupt file")
+    func loadLogCorrupt() throws {
+        let (service, _) = try Self.makeTempService()
+        let url = service.logsDirectoryURL.appendingPathComponent("2026-04-16.json")
+        try "not valid json".data(using: .utf8)!.write(to: url, options: .atomic)
+
+        #expect(throws: (any Error).self) {
+            try service.loadLog(for: "2026-04-16")
+        }
+    }
 }

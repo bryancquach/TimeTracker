@@ -11,6 +11,7 @@ A lightweight macOS menu bar app for tracking time across work categories. Click
         * Elapsed hours can be modified manually in case you forget to start or stop a timer at the right moment.
         * Timers persist across app restarts within a given day, and totals are exported to a JSON file at the end of each day.
     1. Independent timers: can run multiple at a time. No impact on daily total, but can be linked to auto-start a timesheet timer when activated.
+* A timesheet summary view that shows your per-label raw and adjusted hours, seven days at a time, as a table.
 
 ## Setup
 

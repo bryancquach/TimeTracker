@@ -334,6 +334,12 @@ final class TimerViewModel {
         persist()
     }
 
+    // MARK: - Log Summary
+
+    func makeLogSummaryViewModel() -> LogSummaryViewModel {
+        LogSummaryViewModel(persistence: persistence, labels: labels, independentLabels: independentLabels)
+    }
+
     // MARK: - Private Helpers
 
     private func saveLabels() {

@@ -5,6 +5,7 @@ struct PopoverContentView: View {
     let viewModel: TimerViewModel
     @State private var isQuitHovered = false
     @State private var isSettingsHovered = false
+    @State private var isLogSummaryHovered = false
     @State private var showSettings = false
 
     var body: some View {
@@ -69,6 +70,19 @@ struct PopoverContentView: View {
                 .cornerRadius(6)
                 .onHover { isSettingsHovered = $0 }
                 .help("Settings")
+
+                Button(action: { LogSummaryWindow.show(viewModel: viewModel) }) {
+                    Image(systemName: "list.clipboard")
+                        .frame(width: 16, height: 16)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color.primary.opacity(isLogSummaryHovered ? 0.12 : 0))
+                .cornerRadius(6)
+                .onHover { isLogSummaryHovered = $0 }
+                .help("View Log Summary")
 
                 Spacer()
 
