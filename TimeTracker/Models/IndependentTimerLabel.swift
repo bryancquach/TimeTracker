@@ -12,22 +12,6 @@ extension IndependentTimerLabel {
     ]
 
     static func generateId(from displayName: String, existingIds: [String] = []) throws -> String {
-        let base = displayName
-            .lowercased()
-            .replacingOccurrences(of: " ", with: "_")
-            .filter { $0.isLetter || $0.isNumber || $0 == "_" }
-
-        let proposedBase = base.isEmpty ? "label" : base
-
-        let hasConflict = existingIds.contains { existingId in
-            existingId.hasPrefix(proposedBase + "_") || existingId == proposedBase
-        }
-
-        if hasConflict {
-            throw TimerLabel.LabelError.duplicateLabel(displayName)
-        }
-
-        let suffix = UUID().uuidString.prefix(8).lowercased()
-        return "\(proposedBase)_\(suffix)"
+        try LabelIdGenerator.generateId(from: displayName, existingIds: existingIds)
     }
 }

@@ -228,7 +228,7 @@ struct SettingsView: View {
 
     private func exportData() {
         guard let bundle = viewModel.exportData() else { return }
-        guard let data = try? PersistenceService.encoder.encode(bundle) else { return }
+        guard let data = try? JSONCoding.encoder.encode(bundle) else { return }
 
         let panel = NSSavePanel()
         panel.title = "Export App Data"

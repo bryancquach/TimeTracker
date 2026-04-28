@@ -51,7 +51,7 @@ struct SessionLogger: Sendable {
              independentLabels: [IndependentTimerLabel] = [], to url: URL) {
         let log = buildLog(from: session, labels: labels, independentLabels: independentLabels)
         do {
-            let data = try PersistenceService.encoder.encode(log)
+            let data = try JSONCoding.encoder.encode(log)
             try data.write(to: url, options: .atomic)
         } catch {
             Self.log.error("Failed to write log to \(url.path): \(error.localizedDescription)")
@@ -61,9 +61,9 @@ struct SessionLogger: Sendable {
     func recalculateLogFile(at url: URL) throws {
         let originalData = try Data(contentsOf: url)
         do {
-            let log = try PersistenceService.decoder.decode(SessionLog.self, from: originalData)
+            let log = try JSONCoding.decoder.decode(SessionLog.self, from: originalData)
             let recalculated = log.recalculated()
-            let newData = try PersistenceService.encoder.encode(recalculated)
+            let newData = try JSONCoding.encoder.encode(recalculated)
             try newData.write(to: url, options: .atomic)
         } catch {
             try? originalData.write(to: url, options: .atomic)

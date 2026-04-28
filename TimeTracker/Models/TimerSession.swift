@@ -61,20 +61,13 @@ struct TimerSession: Codable {
     // MARK: - Date Helpers
 
     static func dayString(for date: Date) -> String {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        f.timeZone = .current
-        return f.string(from: date)
+        DayFormatter.dayString(for: date)
     }
 
     static var todayString: String { dayString(for: Date()) }
 
-    /// Parses a day string (e.g. "2026-04-10") to midnight local time.
     static func startOfDay(for dayString: String) -> Date? {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        f.timeZone = .current
-        return f.date(from: dayString)
+        DayFormatter.startOfDay(for: dayString)
     }
 
     /// Returns start of the next day (midnight boundary) for the given day string.

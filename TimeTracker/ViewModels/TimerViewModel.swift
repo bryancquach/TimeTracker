@@ -266,7 +266,7 @@ final class TimerViewModel {
 
     func importData(from url: URL) throws {
         let data = try Data(contentsOf: url)
-        let bundle = try PersistenceService.decoder.decode(AppDataBundle.self, from: data)
+        let bundle = try JSONCoding.decoder.decode(AppDataBundle.self, from: data)
         labels = bundle.labels
         independentLabels = bundle.independentLabels
         if let imported = bundle.session {

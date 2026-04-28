@@ -124,7 +124,7 @@ struct SessionLoggerTests {
         let log = logger.buildLog(from: session, labels: TimerLabel.defaults,
                                   independentLabels: IndependentTimerLabel.defaults)
 
-        let data = try PersistenceService.encoder.encode(log)
+        let data = try JSONCoding.encoder.encode(log)
         let jsonString = String(data: data, encoding: .utf8)!
 
         #expect(jsonString.contains("\"totalHours\" : 1.92"))

@@ -46,7 +46,7 @@ struct SessionActionsView: View {
                 .background(Color.primary.opacity(isUpdateHovered ? 0.12 : 0.05))
                 .cornerRadius(6)
                 .onHover { isUpdateHovered = $0 }
-                .help("Recalculate adjusted hours for a previously saved log file")
+                .help("Recalculate adjusted hours for an existing log file if manual file changes were made to the raw hours")
 
                 Spacer()
 

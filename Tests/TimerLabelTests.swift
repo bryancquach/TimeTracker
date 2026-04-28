@@ -62,7 +62,7 @@ struct TimerLabelTests {
     @Test("generateId throws error when base name conflicts")
     func generateIdConflict() throws {
         let existingId = try TimerLabel.generateId(from: "Project Alpha")
-        #expect(throws: TimerLabel.LabelError.self) {
+        #expect(throws: LabelError.self) {
             try TimerLabel.generateId(from: "Project Alpha", existingIds: [existingId])
         }
     }

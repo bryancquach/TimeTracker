@@ -361,7 +361,7 @@ struct TimerViewModelTests {
     @Test("addLabel throws error for duplicate label base name")
     func addLabelDuplicate() throws {
         try viewModel.addLabel(displayName: "Project Alpha")
-        #expect(throws: TimerLabel.LabelError.self) {
+        #expect(throws: LabelError.self) {
             try viewModel.addLabel(displayName: "Project Alpha")
         }
     }
