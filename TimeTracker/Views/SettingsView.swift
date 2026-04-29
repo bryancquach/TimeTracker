@@ -1,5 +1,4 @@
 import SwiftUI
-import AppKit
 import UniformTypeIdentifiers
 
 struct SettingsView: View {
@@ -247,30 +246,25 @@ struct SettingsView: View {
     }
 
     private func exportData() {
-        guard let bundle = viewModel.exportData() else { return }
-        guard let data = try? JSONCoding.encoder.encode(bundle) else { return }
-
-        let panel = NSSavePanel()
-        panel.title = "Export App Data"
-        panel.nameFieldStringValue = "TimeTracker-export.json"
-        panel.allowedContentTypes = [.json]
-        panel.level = .floating
-        panel.begin { response in
-            guard response == .OK, let url = panel.url else { return }
-            try? data.write(to: url, options: .atomic)
+        FileDialogCoordinator.showSavePanel(
+            title: "Export App Data",
+            fileName: "TimeTracker-export.json"
+        ) { url in
+            Task { @MainActor in
+                do {
+                    try viewModel.exportDataToFile(at: url)
+                } catch {
+                    dataError = error.localizedDescription
+                }
+            }
         }
     }
 
     private func importData() {
-        let panel = NSOpenPanel()
-        panel.title = "Import App Data"
-        panel.canChooseFiles = true
-        panel.canChooseDirectories = false
-        panel.allowsMultipleSelection = false
-        panel.allowedContentTypes = [.json]
-        panel.level = .floating
-        panel.begin { response in
-            guard response == .OK, let url = panel.url else { return }
+        FileDialogCoordinator.showOpenPanel(
+            title: "Import App Data",
+            allowedContentTypes: [.json]
+        ) { url in
             Task { @MainActor in
                 do {
                     try viewModel.importData(from: url)
@@ -282,20 +276,19 @@ struct SettingsView: View {
     }
 
     private func showDirectoryPicker() {
-        let panel = NSOpenPanel()
-        panel.title = "Select Log Output Directory"
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.allowsMultipleSelection = false
-        panel.canCreateDirectories = true
-        panel.level = .floating
+        let directoryURL: URL
         if let current = viewModel.customLogDirectoryPath {
-            panel.directoryURL = URL(fileURLWithPath: current, isDirectory: true)
+            directoryURL = URL(fileURLWithPath: current, isDirectory: true)
         } else {
-            panel.directoryURL = viewModel.logsDirectoryURL
+            directoryURL = viewModel.logsDirectoryURL
         }
-        panel.begin { response in
-            guard response == .OK, let url = panel.url else { return }
+        FileDialogCoordinator.showOpenPanel(
+            title: "Select Log Output Directory",
+            canChooseFiles: false,
+            canChooseDirectories: true,
+            canCreateDirectories: true,
+            directoryURL: directoryURL
+        ) { url in
             Task { @MainActor in
                 viewModel.setCustomLogDirectory(url)
             }

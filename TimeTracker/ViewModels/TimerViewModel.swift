@@ -261,6 +261,12 @@ final class TimerViewModel {
         )
     }
 
+    func exportDataToFile(at url: URL) throws {
+        guard let bundle = exportData() else { return }
+        let data = try JSONCoding.encoder.encode(bundle)
+        try data.write(to: url, options: .atomic)
+    }
+
     func importData(from url: URL) throws {
         let data = try Data(contentsOf: url)
         let bundle = try JSONCoding.decoder.decode(AppDataBundle.self, from: data)

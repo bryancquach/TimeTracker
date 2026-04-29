@@ -1,5 +1,4 @@
 import SwiftUI
-import AppKit
 
 struct PopoverContentView: View {
     let viewModel: TimerViewModel
@@ -132,17 +131,12 @@ struct PopoverContentView: View {
     }
 
     private func showRecalculatePanel() {
-        let panel = NSOpenPanel()
-        panel.title = "Select Log File to Update"
-        panel.allowedContentTypes = [.json]
-        panel.canChooseFiles = true
-        panel.canChooseDirectories = false
-        panel.allowsMultipleSelection = false
-        panel.directoryURL = viewModel.logsDirectoryURL
-        panel.prompt = "Select"
-        panel.level = .floating
-        panel.begin { response in
-            guard response == .OK, let url = panel.url else { return }
+        FileDialogCoordinator.showOpenPanel(
+            title: "Select Log File to Update",
+            allowedContentTypes: [.json],
+            directoryURL: viewModel.logsDirectoryURL,
+            prompt: "Select"
+        ) { url in
             Task { @MainActor in
                 viewModel.recalculateLog(at: url)
             }
