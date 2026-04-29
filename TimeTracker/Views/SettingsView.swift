@@ -3,14 +3,6 @@ import UniformTypeIdentifiers
 
 struct SettingsView: View {
     let viewModel: TimerViewModel
-    @State private var isDecrementHovered = false
-    @State private var isIncrementHovered = false
-    @State private var isChooseHovered = false
-    @State private var isManageLabelsHovered = false
-    @State private var isManageIndependentHovered = false
-    @State private var isClearHovered = false
-    @State private var isExportHovered = false
-    @State private var isImportHovered = false
     @State private var showClearConfirmation = false
     @State private var dataError: String?
 
@@ -36,11 +28,7 @@ struct SettingsView: View {
                         .frame(width: 16, height: 16)
                         .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
-                .padding(2)
-                .background(Color.primary.opacity(isDecrementHovered ? 0.08 : 0))
-                .cornerRadius(4)
-                .onHover { isDecrementHovered = $0 }
+                .hoverHighlight(hover: 0.08, horizontalPadding: 2, verticalPadding: 2, cornerRadius: 4)
 
                 Text(String(format: "%.2fh", viewModel.timeIncrementHours))
                     .font(.callout)
@@ -56,11 +44,7 @@ struct SettingsView: View {
                         .frame(width: 16, height: 16)
                         .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
-                .padding(2)
-                .background(Color.primary.opacity(isIncrementHovered ? 0.08 : 0))
-                .cornerRadius(4)
-                .onHover { isIncrementHovered = $0 }
+                .hoverHighlight(hover: 0.08, horizontalPadding: 2, verticalPadding: 2, cornerRadius: 4)
             }
 
             HStack {
@@ -74,26 +58,16 @@ struct SettingsView: View {
                     Button("Reset") {
                         viewModel.clearCustomLogDirectory()
                     }
-                    .buttonStyle(.plain)
                     .font(.callout)
                     .foregroundStyle(.secondary)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.primary.opacity(isChooseHovered ? 0.08 : 0))
-                    .cornerRadius(4)
-                    .onHover { isChooseHovered = $0 }
+                    .hoverHighlight(hover: 0.08, horizontalPadding: 6, verticalPadding: 2, cornerRadius: 4)
                 }
 
                 Button("Choose\u{2026}") {
                     showDirectoryPicker()
                 }
-                .buttonStyle(.plain)
                 .font(.callout.bold())
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(Color.primary.opacity(isChooseHovered ? 0.08 : 0))
-                .cornerRadius(4)
-                .onHover { isChooseHovered = $0 }
+                .hoverHighlight(hover: 0.08, horizontalPadding: 6, verticalPadding: 2, cornerRadius: 4)
             }
 
             if let path = viewModel.customLogDirectoryPath {
@@ -119,13 +93,8 @@ struct SettingsView: View {
                         )
                     }
                 }
-                .buttonStyle(.plain)
                 .font(.callout.bold())
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(Color.primary.opacity(isManageLabelsHovered ? 0.08 : 0))
-                .cornerRadius(4)
-                .onHover { isManageLabelsHovered = $0 }
+                .hoverHighlight(hover: 0.08, horizontalPadding: 6, verticalPadding: 2, cornerRadius: 4)
 
                 Spacer()
             }
@@ -144,13 +113,8 @@ struct SettingsView: View {
                         )
                     }
                 }
-                .buttonStyle(.plain)
                 .font(.callout.bold())
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(Color.primary.opacity(isManageIndependentHovered ? 0.08 : 0))
-                .cornerRadius(4)
-                .onHover { isManageIndependentHovered = $0 }
+                .hoverHighlight(hover: 0.08, horizontalPadding: 6, verticalPadding: 2, cornerRadius: 4)
 
                 Spacer()
             }
@@ -197,35 +161,20 @@ struct SettingsView: View {
                     Button("Clear") {
                         showClearConfirmation = true
                     }
-                    .buttonStyle(.plain)
                     .font(.callout.bold())
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.primary.opacity(isClearHovered ? 0.08 : 0))
-                    .cornerRadius(4)
-                    .onHover { isClearHovered = $0 }
+                    .hoverHighlight(hover: 0.08, horizontalPadding: 6, verticalPadding: 2, cornerRadius: 4)
 
                     Button("Export\u{2026}") {
                         exportData()
                     }
-                    .buttonStyle(.plain)
                     .font(.callout.bold())
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.primary.opacity(isExportHovered ? 0.08 : 0))
-                    .cornerRadius(4)
-                    .onHover { isExportHovered = $0 }
+                    .hoverHighlight(hover: 0.08, horizontalPadding: 6, verticalPadding: 2, cornerRadius: 4)
 
                     Button("Import\u{2026}") {
                         importData()
                     }
-                    .buttonStyle(.plain)
                     .font(.callout.bold())
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.primary.opacity(isImportHovered ? 0.08 : 0))
-                    .cornerRadius(4)
-                    .onHover { isImportHovered = $0 }
+                    .hoverHighlight(hover: 0.08, horizontalPadding: 6, verticalPadding: 2, cornerRadius: 4)
                 }
 
                 Spacer()

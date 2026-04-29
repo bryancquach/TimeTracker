@@ -2,9 +2,7 @@ import SwiftUI
 
 struct PopoverContentView: View {
     let viewModel: TimerViewModel
-    @State private var isQuitHovered = false
     @State private var isSettingsHovered = false
-    @State private var isLogSummaryHovered = false
     @State private var showSettings = false
 
     var body: some View {
@@ -84,12 +82,7 @@ struct PopoverContentView: View {
                         .frame(width: 16, height: 16)
                         .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(Color.primary.opacity(isLogSummaryHovered ? 0.12 : 0))
-                .cornerRadius(6)
-                .onHover { isLogSummaryHovered = $0 }
+                .hoverHighlight()
                 .help("View Log Summary")
 
                 Spacer()
@@ -98,12 +91,7 @@ struct PopoverContentView: View {
                     NSApplication.shared.terminate(nil)
                 }
                 .help("Close the TimeTracker app")
-                .buttonStyle(.plain)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(Color.red.opacity(isQuitHovered ? 0.25 : 0.15))
-                .cornerRadius(6)
-                .onHover { isQuitHovered = $0 }
+                .hoverHighlight(color: .red, default: 0.15, hover: 0.25)
             }
 
             if showSettings {

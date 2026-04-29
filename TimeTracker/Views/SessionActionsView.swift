@@ -11,9 +11,6 @@ struct SessionActionsView: View {
 
     @State private var showResetConfirmation = false
     @State private var showLogChoice = false
-    @State private var isLogHovered = false
-    @State private var isResetHovered = false
-    @State private var isUpdateHovered = false
 
     var body: some View {
         VStack(spacing: 6) {
@@ -21,12 +18,7 @@ struct SessionActionsView: View {
                 Button("Log session") {
                     showLogChoice = true
                 }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(Color.primary.opacity(isLogHovered ? 0.12 : 0.05))
-                .cornerRadius(6)
-                .onHover { isLogHovered = $0 }
+                .hoverHighlight(default: 0.05)
                 .help("Save current session times to a log file")
 
                 if showLogConfirmation {
@@ -40,12 +32,7 @@ struct SessionActionsView: View {
                 Button("Update Past Entry") {
                     onUpdate()
                 }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(Color.primary.opacity(isUpdateHovered ? 0.12 : 0.05))
-                .cornerRadius(6)
-                .onHover { isUpdateHovered = $0 }
+                .hoverHighlight(default: 0.05)
                 .help("Recalculate adjusted hours for an existing log file if manual file changes were made to the raw hours")
 
                 Spacer()
@@ -53,12 +40,7 @@ struct SessionActionsView: View {
                 Button("Reset") {
                     showResetConfirmation = true
                 }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(Color.primary.opacity(isResetHovered ? 0.12 : 0.05))
-                .cornerRadius(6)
-                .onHover { isResetHovered = $0 }
+                .hoverHighlight(default: 0.05)
                 .help("Zero out all timers for the current session")
             }
             .animation(.easeInOut(duration: 0.3), value: showLogConfirmation)

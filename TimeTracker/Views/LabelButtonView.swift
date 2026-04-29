@@ -11,8 +11,6 @@ struct LabelButtonView: View {
     var onDecrement: (() -> Void)? = nil
 
     @State private var isHovered = false
-    @State private var isDecrementHovered = false
-    @State private var isIncrementHovered = false
 
     var body: some View {
         HStack(spacing: 4) {
@@ -39,11 +37,7 @@ struct LabelButtonView: View {
                         .frame(width: 16, height: 16)
                         .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
-                .padding(2)
-                .background(Color.primary.opacity(isDecrementHovered ? 0.08 : 0))
-                .cornerRadius(4)
-                .onHover { isDecrementHovered = $0 }
+                .hoverHighlight(hover: 0.08, horizontalPadding: 2, verticalPadding: 2, cornerRadius: 4)
             }
 
             Text(elapsed)
@@ -58,11 +52,7 @@ struct LabelButtonView: View {
                         .frame(width: 16, height: 16)
                         .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
-                .padding(2)
-                .background(Color.primary.opacity(isIncrementHovered ? 0.08 : 0))
-                .cornerRadius(4)
-                .onHover { isIncrementHovered = $0 }
+                .hoverHighlight(hover: 0.08, horizontalPadding: 2, verticalPadding: 2, cornerRadius: 4)
             }
         }
         .padding(.vertical, 3)
