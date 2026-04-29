@@ -9,9 +9,11 @@ A lightweight macOS menu bar app for tracking time across work categories. Click
     1. "Timesheet" timers: can only run one at a time. Contributes to a daily total.
         * Elapsed hours accumulate per label throughout the day and auto-reset at midnight local time.
         * Elapsed hours can be modified manually in case you forget to start or stop a timer at the right moment.
-        * Timers persist across app restarts within a given day, and totals are exported to a JSON file at the end of each day.
+        * Timers persist across app restarts within a given day, and totals are exported to a JSON log file at the end of each day.
     1. Independent timers: can run multiple at a time. No impact on daily total, but can be linked to auto-start a timesheet timer when activated.
 * A timesheet summary view that shows your per-label raw and adjusted hours, seven days at a time, as a table.
+* Adjusted hours in past log files can be re-calculated within the app when raw hours for those files are updated manually.
+* App data can be exported and imported to save and load your customized settings across machines.
 
 ## Setup
 
@@ -81,44 +83,56 @@ The log output directory can also be overridden at runtime via the Settings pane
 
 ## Architecture
 
+`TimeTracker` follows an [MVVM architectural pattern (Model-View-View Model)](https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93viewmodel) to keep UI and business logic separated.
+
 ```
 TimeTracker/
 ├── TimeTrackerApp.swift              # @main entry point; MenuBarExtra scene (.window style)
 ├── Constants.swift                   # AppConstants: work-day hours, persist interval, limits, keys
 ├── Models/
-│   ├── TimerLabel.swift              # Label struct with defaults and ID generation for custom labels
+│   ├── TimerLabel.swift              # Timesheet label struct with defaults
+│   ├── IndependentTimerLabel.swift   # Independent timer label with optional linked label
 │   ├── TimerSession.swift            # Per-label accumulated seconds, active timer state, day string,
 │   │                                 #   independent timer, date helpers
-│   └── SessionLog.swift              # Snapshot written by "Log session" (includes adjustedHours,
-│                                     #   independentTimerHours); recalculation support
+│   ├── SessionLog.swift              # Snapshot written by "Log session" (includes adjustedHours,
+│   │                                 #   independentTimerHours); recalculation support
+│   ├── AppDataBundle.swift           # Container for export/import of all app data
+│   └── DayLogResult.swift            # Result type for day-level log operations
 ├── Protocols/
-│   └── SessionPersisting.swift       # Protocol for persistence (enables test doubles)
+│   └── SessionPersisting.swift       # Composed protocol (SessionReading, SessionWriting, LogPersisting)
 ├── ViewModels/
-│   └── TimerViewModel.swift          # Core logic: tap handling, day rollover, sleep/wake, log
-│                                     #   session, reset, label CRUD, manual time adjustment,
-│                                     #   independent timer, custom log directory, recalculation
+│   ├── TimerViewModel.swift          # Core logic: tap handling, sleep/wake, log session, reset,
+│   │                                 #   manual time adjustment, custom log directory, recalculation
+│   └── LogSummaryViewModel.swift     # Weekly log summary data and navigation
 ├── Views/
-│   ├── PopoverContentView.swift      # Popover layout — label rows, independent timer, session controls,
-│   │                                 #   settings toggle, recalculate panel
+│   ├── PopoverContentView.swift      # Popover layout — label rows, session controls, settings toggle
 │   ├── LabelButtonView.swift         # Single row: status dot, label name, +/− buttons, elapsed hours
-│   ├── SessionActionsView.swift      # "Log session" (default or custom path), "Update Past Entry",
-│   │                                 #   and "Reset" with confirmation dialogs
-│   ├── LabelManagerView.swift        # Floating window for adding, renaming, and deleting labels
-│   └── SettingsView.swift            # Time increment amount, custom log directory, manage labels
+│   ├── SessionActionsView.swift      # "Log session", "Update Past Entry", "Reset" with confirmations
+│   ├── LabelManagerView.swift        # Floating window for managing timesheet labels
+│   ├── IndependentLabelManagerView.swift  # Floating window for managing independent timer labels
+│   ├── SettingsView.swift            # Time increment, custom log directory, manage labels
+│   ├── LogSummaryView.swift          # Weekly timesheet summary table
+│   ├── Components/
+│   │   ├── EditableLabelRow.swift    # Shared editable label row with edit/delete states
+│   │   └── AddLabelFooter.swift      # Shared "add label" form footer
+│   ├── Styles/
+│   │   └── HoverHighlight.swift      # Reusable hover-highlight ViewModifier for buttons
+│   └── Utilities/
+│       ├── SingleWindowPresenter.swift   # Generic single-instance NSWindow lifecycle manager
+│       └── FileDialogCoordinator.swift   # NSSavePanel/NSOpenPanel helpers (floating level)
 ├── Services/
 │   ├── PersistenceService.swift      # JSON read/write; resolves base dir from
 │   │                                 #   ~/.config/timetracker/config.json, env var, or App Support
+│   ├── LabelManager.swift            # Label CRUD operations and persistence
+│   ├── DayRolloverService.swift      # Pure day-boundary rollover logic
 │   ├── SleepWakeService.swift        # NSWorkspace sleep/wake + screen sleep/wake observer
-│   ├── SessionLogger.swift           # Builds SessionLog from session, writes logs, recalculates
-│   │                                 #   adjusted hours in existing log files
+│   ├── SessionLogger.swift           # Builds SessionLog, writes logs, recalculates adjusted hours
 │   └── TickScheduler.swift           # 1-second tick + configurable persist-cycle callback
-├── Tests/
-│   ├── PersistenceServiceTests.swift
-│   ├── SessionLoggerTests.swift
-│   ├── SessionLogTests.swift
-│   ├── TimerLabelTests.swift
-│   ├── TimerSessionTests.swift
-│   └── TimerViewModelTests.swift
+├── Utilities/
+│   ├── LabelIdGenerator.swift        # Shared ID generation from display names
+│   ├── DayFormatter.swift            # Shared DateFormatter for day-string operations
+│   ├── JSONCoding.swift              # Shared JSONEncoder/JSONDecoder instances
+│   └── TimeFormatting.swift          # Hours/minutes display formatting
 └── Resources/
     └── Assets.xcassets               # App icon asset catalog
 ```

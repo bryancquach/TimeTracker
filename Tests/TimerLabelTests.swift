@@ -40,37 +40,37 @@ struct TimerLabelTests {
 
     @Test("generateId produces non-empty ID with UUID suffix")
     func generateId() throws {
-        let id = try TimerLabel.generateId(from: "My Label")
+        let id = try LabelIdGenerator.generateId(from: "My Label")
         #expect(id.hasPrefix("my_label_"))
         #expect(id.count > "my_label_".count)
     }
 
     @Test("generateId handles empty display name")
     func generateIdEmpty() throws {
-        let id = try TimerLabel.generateId(from: "")
+        let id = try LabelIdGenerator.generateId(from: "")
         #expect(id.hasPrefix("label_"))
         #expect(!id.isEmpty)
     }
 
     @Test("generateId produces unique IDs for same input")
     func generateIdUnique() throws {
-        let id1 = try TimerLabel.generateId(from: "Test")
-        let id2 = try TimerLabel.generateId(from: "Test")
+        let id1 = try LabelIdGenerator.generateId(from: "Test")
+        let id2 = try LabelIdGenerator.generateId(from: "Test")
         #expect(id1 != id2)
     }
 
     @Test("generateId throws error when base name conflicts")
     func generateIdConflict() throws {
-        let existingId = try TimerLabel.generateId(from: "Project Alpha")
+        let existingId = try LabelIdGenerator.generateId(from: "Project Alpha")
         #expect(throws: LabelError.self) {
-            try TimerLabel.generateId(from: "Project Alpha", existingIds: [existingId])
+            try LabelIdGenerator.generateId(from: "Project Alpha", existingIds: [existingId])
         }
     }
 
     @Test("generateId allows different base names")
     func generateIdNonConflict() throws {
-        let existingId = try TimerLabel.generateId(from: "Project Alpha")
-        let newId = try TimerLabel.generateId(from: "Project Beta", existingIds: [existingId])
+        let existingId = try LabelIdGenerator.generateId(from: "Project Alpha")
+        let newId = try LabelIdGenerator.generateId(from: "Project Beta", existingIds: [existingId])
         #expect(newId.hasPrefix("project_beta_"))
     }
 }

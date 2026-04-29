@@ -13,8 +13,4 @@ extension TimerLabel {
         .init(id: "internal_training",      displayName: "Internal Training"),
         .init(id: "company_town_hall",      displayName: "Town Hall Meeting"),
     ]
-
-    static func generateId(from displayName: String, existingIds: [String] = []) throws -> String {
-        try LabelIdGenerator.generateId(from: displayName, existingIds: existingIds)
-    }
 }

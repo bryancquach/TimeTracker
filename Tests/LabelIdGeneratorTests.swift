@@ -60,18 +60,6 @@ struct LabelIdGeneratorTests {
         #expect(id.hasPrefix("project_beta_"))
     }
 
-    @Test("TimerLabel.generateId forwards to LabelIdGenerator")
-    func timerLabelForwarding() throws {
-        let id = try TimerLabel.generateId(from: "Forwarded")
-        #expect(id.hasPrefix("forwarded_"))
-    }
-
-    @Test("IndependentTimerLabel.generateId forwards to LabelIdGenerator")
-    func independentTimerLabelForwarding() throws {
-        let id = try IndependentTimerLabel.generateId(from: "Forwarded")
-        #expect(id.hasPrefix("forwarded_"))
-    }
-
     @Test("LabelError provides descriptive error message")
     func labelErrorDescription() {
         let error = LabelError.duplicateLabel("Test")

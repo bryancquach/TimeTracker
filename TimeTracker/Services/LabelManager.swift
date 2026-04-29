@@ -23,7 +23,7 @@ final class LabelManager {
     @discardableResult
     func addLabel(displayName: String) throws -> TimerLabel {
         let existingIds = labels.map { $0.id }
-        let id = try TimerLabel.generateId(from: displayName, existingIds: existingIds)
+        let id = try LabelIdGenerator.generateId(from: displayName, existingIds: existingIds)
         let label = TimerLabel(id: id, displayName: displayName)
         labels.append(label)
         saveLabels()
@@ -59,7 +59,7 @@ final class LabelManager {
     @discardableResult
     func addIndependentLabel(displayName: String, linkedLabelId: TimerLabel.ID? = nil) throws -> IndependentTimerLabel {
         let existingIds = independentLabels.map { $0.id }
-        let id = try IndependentTimerLabel.generateId(from: displayName, existingIds: existingIds)
+        let id = try LabelIdGenerator.generateId(from: displayName, existingIds: existingIds)
         let label = IndependentTimerLabel(id: id, displayName: displayName, linkedLabelId: linkedLabelId)
         independentLabels.append(label)
         saveIndependentLabels()

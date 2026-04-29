@@ -2,7 +2,6 @@ import SwiftUI
 
 struct PopoverContentView: View {
     let viewModel: TimerViewModel
-    @State private var isSettingsHovered = false
     @State private var showSettings = false
 
     var body: some View {
@@ -60,12 +59,7 @@ struct PopoverContentView: View {
                         .frame(width: 16, height: 16)
                         .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(Color.primary.opacity(isSettingsHovered ? 0.12 : (showSettings ? 0.08 : 0)))
-                .cornerRadius(6)
-                .onHover { isSettingsHovered = $0 }
+                .hoverHighlight(default: showSettings ? 0.08 : 0)
                 .help("Settings")
 
                 Button(action: {
