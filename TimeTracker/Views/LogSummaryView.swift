@@ -1,44 +1,4 @@
 import SwiftUI
-import AppKit
-
-// MARK: - Window Controller
-
-@MainActor
-enum LogSummaryWindow {
-    private static var window: NSWindow?
-
-    static func show(viewModel: TimerViewModel) {
-        if let existing = window, existing.isVisible {
-            existing.makeKeyAndOrderFront(nil)
-            return
-        }
-
-        let summaryVM = viewModel.makeLogSummaryViewModel()
-        let view = LogSummaryView(viewModel: summaryVM)
-        let hostingView = NSHostingView(rootView: view)
-        hostingView.frame = NSRect(x: 0, y: 0, width: 700, height: 500)
-
-        let w = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 700, height: 500),
-            styleMask: [.titled, .closable, .resizable],
-            backing: .buffered,
-            defer: false
-        )
-        w.title = "Time Tracking Summary"
-        w.contentView = hostingView
-        w.center()
-        w.level = .floating
-        w.isReleasedWhenClosed = false
-        w.minSize = NSSize(width: 500, height: 300)
-        w.makeKeyAndOrderFront(nil)
-        window = w
-    }
-
-    static func close() {
-        window?.close()
-        window = nil
-    }
-}
 
 // MARK: - Log Summary View
 

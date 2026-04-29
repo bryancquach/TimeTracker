@@ -1,43 +1,4 @@
 import SwiftUI
-import AppKit
-
-// MARK: - Window Controller
-
-@MainActor
-enum IndependentLabelManagerWindow {
-    private static var window: NSWindow?
-
-    static func show(viewModel: TimerViewModel) {
-        if let existing = window, existing.isVisible {
-            existing.makeKeyAndOrderFront(nil)
-            return
-        }
-
-        let view = IndependentLabelManagerView(viewModel: viewModel, onDone: { close() })
-        let hostingView = NSHostingView(rootView: view)
-        hostingView.frame = NSRect(x: 0, y: 0, width: 350, height: 400)
-
-        let w = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 350, height: 400),
-            styleMask: [.titled, .closable, .resizable],
-            backing: .buffered,
-            defer: false
-        )
-        w.title = "Independent Timers"
-        w.contentView = hostingView
-        w.center()
-        w.level = .floating
-        w.isReleasedWhenClosed = false
-        w.minSize = NSSize(width: 300, height: 200)
-        w.makeKeyAndOrderFront(nil)
-        window = w
-    }
-
-    static func close() {
-        window?.close()
-        window = nil
-    }
-}
 
 // MARK: - Independent Label Manager View
 
@@ -76,45 +37,26 @@ struct IndependentLabelManagerView: View {
 
             Divider()
 
-            HStack {
-                if isAddingLabel {
-                    VStack(alignment: .leading, spacing: 4) {
-                        TextField("Label name", text: $newLabelName)
-                            .textFieldStyle(.roundedBorder)
-                            .onSubmit { commitAdd() }
-
-                        Picker("Link to:", selection: $newLinkedLabelId) {
-                            Text("None").tag(TimerLabel.ID?.none)
-                            ForEach(viewModel.labels) { label in
-                                Text(label.displayName).tag(TimerLabel.ID?.some(label.id))
-                            }
-                        }
-                        .pickerStyle(.menu)
-
-                        HStack {
-                            Button("Add") { commitAdd() }
-                                .disabled(newLabelName.trimmingCharacters(in: .whitespaces).isEmpty)
-
-                            Button("Cancel") {
-                                isAddingLabel = false
-                                newLabelName = ""
-                                newLinkedLabelId = nil
-                            }
-                        }
+            AddLabelFooter(
+                isAdding: $isAddingLabel,
+                name: $newLabelName,
+                addButtonTitle: "Add Independent Timer",
+                onCommit: { commitAdd() },
+                onCancel: {
+                    isAddingLabel = false
+                    newLabelName = ""
+                    newLinkedLabelId = nil
+                },
+                onDone: onDone
+            ) {
+                Picker("Link to:", selection: $newLinkedLabelId) {
+                    Text("None").tag(TimerLabel.ID?.none)
+                    ForEach(viewModel.labels) { label in
+                        Text(label.displayName).tag(TimerLabel.ID?.some(label.id))
                     }
-                } else {
-                    Button {
-                        isAddingLabel = true
-                    } label: {
-                        Label("Add Independent Timer", systemImage: "plus")
-                    }
-
-                    Spacer()
-
-                    Button("Done") { onDone() }
                 }
+                .pickerStyle(.menu)
             }
-            .padding(10)
         }
     }
 
@@ -139,87 +81,41 @@ private struct IndependentLabelRow: View {
     let label: IndependentTimerLabel
     let viewModel: TimerViewModel
 
-    @State private var isEditing = false
-    @State private var editName = ""
     @State private var editLinkedLabelId: TimerLabel.ID? = nil
-    @State private var showDeleteConfirmation = false
 
     var body: some View {
-        HStack {
-            if isEditing {
-                VStack(alignment: .leading, spacing: 4) {
-                    TextField("Label name", text: $editName, onCommit: commitEdit)
-                        .textFieldStyle(.roundedBorder)
-
-                    Picker("Link to:", selection: $editLinkedLabelId) {
-                        Text("None").tag(TimerLabel.ID?.none)
-                        ForEach(viewModel.labels) { label in
-                            Text(label.displayName).tag(TimerLabel.ID?.some(label.id))
-                        }
-                    }
-                    .pickerStyle(.menu)
-
-                    HStack {
-                        Button("Save") { commitEdit() }
-                            .disabled(editName.trimmingCharacters(in: .whitespaces).isEmpty)
-
-                        Button("Cancel") { isEditing = false }
+        EditableLabelRow(
+            displayName: label.displayName,
+            onSave: { newName in
+                viewModel.updateIndependentLabel(
+                    id: label.id,
+                    newDisplayName: newName,
+                    newLinkedLabelId: editLinkedLabelId
+                )
+            },
+            onDelete: {
+                viewModel.deleteIndependentLabel(id: label.id)
+            },
+            supplementaryEditContent: {
+                Picker("Link to:", selection: $editLinkedLabelId) {
+                    Text("None").tag(TimerLabel.ID?.none)
+                    ForEach(viewModel.labels) { label in
+                        Text(label.displayName).tag(TimerLabel.ID?.some(label.id))
                     }
                 }
-            } else if showDeleteConfirmation {
-                Text("Remove \"\(label.displayName)\"?")
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                Button("Remove") {
-                    viewModel.deleteIndependentLabel(id: label.id)
-                    showDeleteConfirmation = false
-                }
-                .foregroundStyle(.red)
-
-                Button("Cancel") {
-                    showDeleteConfirmation = false
-                }
-            } else {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(label.displayName)
-
-                    if let linkedId = label.linkedLabelId,
-                       let linkedName = viewModel.labels.first(where: { $0.id == linkedId })?.displayName {
-                        Text("Linked to \(linkedName)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                Button {
-                    editName = label.displayName
-                    editLinkedLabelId = label.linkedLabelId
-                    isEditing = true
-                } label: {
-                    Image(systemName: "pencil")
+                .pickerStyle(.menu)
+            },
+            supplementaryDisplayContent: {
+                if let linkedId = label.linkedLabelId,
+                   let linkedName = viewModel.labels.first(where: { $0.id == linkedId })?.displayName {
+                    Text("Linked to \(linkedName)")
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                .buttonStyle(.plain)
-
-                Button {
-                    showDeleteConfirmation = true
-                } label: {
-                    Image(systemName: "minus.circle")
-                        .foregroundStyle(.red.opacity(0.7))
-                }
-                .buttonStyle(.plain)
             }
+        )
+        .onAppear {
+            editLinkedLabelId = label.linkedLabelId
         }
-        .padding(.vertical, 2)
-    }
-
-    private func commitEdit() {
-        let trimmed = editName.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty else { return }
-        viewModel.updateIndependentLabel(id: label.id, newDisplayName: trimmed, newLinkedLabelId: editLinkedLabelId)
-        isEditing = false
     }
 }

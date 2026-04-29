@@ -108,7 +108,17 @@ struct SettingsView: View {
 
             HStack {
                 Button("Manage Labels\u{2026}") {
-                    LabelManagerWindow.show(viewModel: viewModel)
+                    SingleWindowPresenter.show(
+                        id: "labelManager",
+                        title: "Timer Labels",
+                        size: NSSize(width: 300, height: 400),
+                        minSize: NSSize(width: 250, height: 200)
+                    ) {
+                        LabelManagerView(
+                            viewModel: viewModel,
+                            onDone: { SingleWindowPresenter.close(id: "labelManager") }
+                        )
+                    }
                 }
                 .buttonStyle(.plain)
                 .font(.callout.bold())
@@ -123,7 +133,17 @@ struct SettingsView: View {
 
             HStack {
                 Button("Manage Independent Timers\u{2026}") {
-                    IndependentLabelManagerWindow.show(viewModel: viewModel)
+                    SingleWindowPresenter.show(
+                        id: "independentLabelManager",
+                        title: "Independent Timers",
+                        size: NSSize(width: 350, height: 400),
+                        minSize: NSSize(width: 300, height: 200)
+                    ) {
+                        IndependentLabelManagerView(
+                            viewModel: viewModel,
+                            onDone: { SingleWindowPresenter.close(id: "independentLabelManager") }
+                        )
+                    }
                 }
                 .buttonStyle(.plain)
                 .font(.callout.bold())

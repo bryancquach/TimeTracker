@@ -71,7 +71,16 @@ struct PopoverContentView: View {
                 .onHover { isSettingsHovered = $0 }
                 .help("Settings")
 
-                Button(action: { LogSummaryWindow.show(viewModel: viewModel) }) {
+                Button(action: {
+                    SingleWindowPresenter.show(
+                        id: "logSummary",
+                        title: "Time Tracking Summary",
+                        size: NSSize(width: 700, height: 500),
+                        minSize: NSSize(width: 500, height: 300)
+                    ) {
+                        LogSummaryView(viewModel: viewModel.makeLogSummaryViewModel())
+                    }
+                }) {
                     Image(systemName: "list.clipboard")
                         .frame(width: 16, height: 16)
                         .contentShape(Rectangle())
