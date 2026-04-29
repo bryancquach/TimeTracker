@@ -1,16 +1,24 @@
 import Foundation
 
-protocol SessionPersisting: Sendable {
-    var logsDirectoryURL: URL { get }
-    func ensureDirectories() throws
+protocol SessionReading: Sendable {
     func loadSession() throws -> TimerSession?
-    func saveSession(_ session: TimerSession) throws
-    func saveLog(_ log: SessionLog) throws
     func loadLabels() throws -> [TimerLabel]?
-    func saveLabels(_ labels: [TimerLabel]) throws
     func loadIndependentLabels() throws -> [IndependentTimerLabel]?
+}
+
+protocol SessionWriting: Sendable {
+    func ensureDirectories() throws
+    func saveSession(_ session: TimerSession) throws
+    func saveLabels(_ labels: [TimerLabel]) throws
     func saveIndependentLabels(_ labels: [IndependentTimerLabel]) throws
-    func loadLog(for day: String) throws -> SessionLog?
-    func loadAllLogs() throws -> [SessionLog]
     func clearAllData() throws
 }
+
+protocol LogPersisting: Sendable {
+    var logsDirectoryURL: URL { get }
+    func saveLog(_ log: SessionLog) throws
+    func loadLog(for day: String) throws -> SessionLog?
+    func loadAllLogs() throws -> [SessionLog]
+}
+
+protocol SessionPersisting: SessionReading, SessionWriting, LogPersisting {}

@@ -10,9 +10,9 @@ final class LabelManager {
     private(set) var labels: [TimerLabel]
     private(set) var independentLabels: [IndependentTimerLabel]
 
-    private let persistence: SessionPersisting
+    private let persistence: SessionWriting
 
-    init(labels: [TimerLabel], independentLabels: [IndependentTimerLabel], persistence: SessionPersisting) {
+    init(labels: [TimerLabel], independentLabels: [IndependentTimerLabel], persistence: SessionWriting) {
         self.labels = labels
         self.independentLabels = independentLabels
         self.persistence = persistence

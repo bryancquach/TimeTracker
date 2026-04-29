@@ -4,9 +4,9 @@ import os
 struct SessionLogger: Sendable {
 
     private static let log = Logger(subsystem: "com.timetracker", category: "SessionLogger")
-    private let persistence: SessionPersisting
+    private let persistence: LogPersisting
 
-    init(persistence: SessionPersisting) {
+    init(persistence: LogPersisting) {
         self.persistence = persistence
     }
 

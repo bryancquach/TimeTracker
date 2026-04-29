@@ -14,11 +14,11 @@ final class LogSummaryViewModel {
 
     var canGoForward: Bool { weekOffset > 0 }
 
-    private let persistence: SessionPersisting
+    private let persistence: LogPersisting
     let labels: [TimerLabel]
     let independentLabels: [IndependentTimerLabel]
 
-    init(persistence: SessionPersisting, labels: [TimerLabel],
+    init(persistence: LogPersisting, labels: [TimerLabel],
          independentLabels: [IndependentTimerLabel]) {
         self.persistence = persistence
         self.labels = labels
