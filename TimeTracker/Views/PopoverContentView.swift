@@ -79,6 +79,16 @@ struct PopoverContentView: View {
                 .hoverHighlight()
                 .help("View Log Summary")
 
+                Button(action: {
+                    NSWorkspace.shared.open(viewModel.logsDirectoryURL)
+                }) {
+                    Image(systemName: "folder")
+                        .frame(width: 16, height: 16)
+                        .contentShape(Rectangle())
+                }
+                .hoverHighlight()
+                .help("Open Log Directory in Finder")
+
                 Spacer()
 
                 Button("Quit") {
