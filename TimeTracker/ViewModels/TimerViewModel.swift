@@ -10,10 +10,13 @@ final class TimerViewModel {
     // MARK: - Observed State
 
     var session: TimerSession
-    var labels: [TimerLabel]
-    var independentLabels: [IndependentTimerLabel]
     var showLogConfirmation = false
     var recalculateError: String?
+
+    let labelManager: LabelManager
+
+    var labels: [TimerLabel] { labelManager.labels }
+    var independentLabels: [IndependentTimerLabel] { labelManager.independentLabels }
 
     /// User-configurable log output directory path, or nil for the default.
     var customLogDirectoryPath: String? = UserDefaults.standard.string(forKey: AppConstants.logDirectoryKey)
@@ -34,6 +37,7 @@ final class TimerViewModel {
 
     private let persistence: SessionPersisting
     private let logger: SessionLogger
+    private let dayRolloverService = DayRolloverService()
     private let scheduler = TickScheduler()
     private var sleepWakeService: SleepWakeService?
     private var wasActiveBeforeSleep: TimerLabel.ID?
@@ -47,10 +51,12 @@ final class TimerViewModel {
         try? persistence.ensureDirectories()
 
         let loadedLabels = (try? persistence.loadLabels()) ?? TimerLabel.defaults
-        self.labels = loadedLabels
-
         let loadedIndependentLabels = (try? persistence.loadIndependentLabels()) ?? IndependentTimerLabel.defaults
-        self.independentLabels = loadedIndependentLabels
+        self.labelManager = LabelManager(
+            labels: loadedLabels,
+            independentLabels: loadedIndependentLabels,
+            persistence: persistence
+        )
 
         let today = TimerSession.todayString
 
@@ -111,12 +117,12 @@ final class TimerViewModel {
     }
 
     func formattedHours(for labelId: TimerLabel.ID) -> String {
-        String(format: "%.2fh", accumulatedSeconds(for: labelId).asHours)
+        TimeFormatting.formattedHours(from: accumulatedSeconds(for: labelId))
     }
 
     var totalFormattedHours: String {
         let total = labels.reduce(0.0) { $0 + accumulatedSeconds(for: $1.id) }
-        return String(format: "%.2fh", total.asHours)
+        return TimeFormatting.formattedHours(from: total)
     }
 
     // MARK: - Time Adjustment
@@ -154,7 +160,7 @@ final class TimerViewModel {
     }
 
     func independentFormattedHours(for labelId: IndependentTimerLabel.ID) -> String {
-        String(format: "%.2fh", independentAccumulatedSeconds(for: labelId).asHours)
+        TimeFormatting.formattedHours(from: independentAccumulatedSeconds(for: labelId))
     }
 
     func adjustIndependentTimerTime(for labelId: IndependentTimerLabel.ID, byHours delta: Double) {
@@ -171,28 +177,19 @@ final class TimerViewModel {
     // MARK: - Independent Label Management
 
     func addIndependentLabel(displayName: String, linkedLabelId: TimerLabel.ID? = nil) throws {
-        let existingIds = independentLabels.map { $0.id }
-        let id = try IndependentTimerLabel.generateId(from: displayName, existingIds: existingIds)
-        let label = IndependentTimerLabel(id: id, displayName: displayName, linkedLabelId: linkedLabelId)
-        independentLabels.append(label)
-        session.independentAccumulated[id] = 0
-        saveIndependentLabels()
+        let label = try labelManager.addIndependentLabel(displayName: displayName, linkedLabelId: linkedLabelId)
+        session.independentAccumulated[label.id] = 0
         persist()
     }
 
     func updateIndependentLabel(id: String, newDisplayName: String, newLinkedLabelId: TimerLabel.ID?) {
-        guard let index = independentLabels.firstIndex(where: { $0.id == id }) else { return }
-        independentLabels[index].displayName = newDisplayName
-        independentLabels[index].linkedLabelId = newLinkedLabelId
-        saveIndependentLabels()
+        labelManager.updateIndependentLabel(id: id, newDisplayName: newDisplayName, newLinkedLabelId: newLinkedLabelId)
     }
 
     func deleteIndependentLabel(id: String) {
-        guard let index = independentLabels.firstIndex(where: { $0.id == id }) else { return }
-        independentLabels.remove(at: index)
+        labelManager.deleteIndependentLabel(id: id)
         session.activeIndependentTimers.removeValue(forKey: id)
         session.independentAccumulated.removeValue(forKey: id)
-        saveIndependentLabels()
         persist()
     }
 
@@ -267,15 +264,12 @@ final class TimerViewModel {
     func importData(from url: URL) throws {
         let data = try Data(contentsOf: url)
         let bundle = try JSONCoding.decoder.decode(AppDataBundle.self, from: data)
-        labels = bundle.labels
-        independentLabels = bundle.independentLabels
+        labelManager.replaceAll(labels: bundle.labels, independentLabels: bundle.independentLabels)
         if let imported = bundle.session {
             session = imported
         } else {
             session = .fresh(day: TimerSession.todayString, labels: labels, independentLabels: independentLabels)
         }
-        saveLabels()
-        saveIndependentLabels()
         persist()
         for log in bundle.logs {
             try? persistence.saveLog(log)
@@ -284,53 +278,36 @@ final class TimerViewModel {
 
     func clearAllData() throws {
         try persistence.clearAllData()
-        labels = TimerLabel.defaults
-        independentLabels = IndependentTimerLabel.defaults
+        labelManager.resetToDefaults()
         session = .fresh(day: TimerSession.todayString, labels: labels, independentLabels: independentLabels)
-        saveLabels()
-        saveIndependentLabels()
         persist()
     }
 
     // MARK: - Label Management
 
     func addLabel(displayName: String) throws {
-        let existingIds = labels.map { $0.id }
-        let id = try TimerLabel.generateId(from: displayName, existingIds: existingIds)
-        let label = TimerLabel(id: id, displayName: displayName)
-        labels.append(label)
-        session.accumulated[id] = 0
-        saveLabels()
+        let label = try labelManager.addLabel(displayName: displayName)
+        session.accumulated[label.id] = 0
         persist()
     }
 
     func updateLabel(id: String, newDisplayName: String) {
-        guard let index = labels.firstIndex(where: { $0.id == id }) else { return }
-        labels[index].displayName = newDisplayName
-        saveLabels()
+        labelManager.updateLabel(id: id, newDisplayName: newDisplayName)
     }
 
     func moveLabel(from source: IndexSet, to destination: Int) {
-        labels.move(fromOffsets: source, toOffset: destination)
-        saveLabels()
+        labelManager.moveLabel(from: source, to: destination)
     }
 
     func deleteLabel(id: String) {
-        guard let index = labels.firstIndex(where: { $0.id == id }) else { return }
-        labels.remove(at: index)
-        if session.activeLabelId == id {
-            flush()
-            session.activeLabelId = nil
-            session.activeStartedAt = nil
+        labelManager.deleteLabel(id: id) { [self] in
+            if session.activeLabelId == id {
+                flush()
+                session.activeLabelId = nil
+                session.activeStartedAt = nil
+            }
+            session.accumulated.removeValue(forKey: id)
         }
-        session.accumulated.removeValue(forKey: id)
-
-        for i in independentLabels.indices where independentLabels[i].linkedLabelId == id {
-            independentLabels[i].linkedLabelId = nil
-        }
-        saveIndependentLabels()
-
-        saveLabels()
         persist()
     }
 
@@ -341,22 +318,6 @@ final class TimerViewModel {
     }
 
     // MARK: - Private Helpers
-
-    private func saveLabels() {
-        do {
-            try persistence.saveLabels(labels)
-        } catch {
-            Self.log.error("Failed to persist labels: \(error.localizedDescription)")
-        }
-    }
-
-    private func saveIndependentLabels() {
-        do {
-            try persistence.saveIndependentLabels(independentLabels)
-        } catch {
-            Self.log.error("Failed to persist independent labels: \(error.localizedDescription)")
-        }
-    }
 
     private func flush() {
         session.flush()
@@ -376,37 +337,17 @@ final class TimerViewModel {
 
     private func checkDayRollover() {
         let today = TimerSession.todayString
-        guard session.day != today else { return }
+        guard let result = dayRolloverService.rolloverIfNeeded(
+            session: session,
+            today: today,
+            labels: labels,
+            independentLabels: independentLabels
+        ) else { return }
 
-        let wasActive = session.activeLabelId
-        let wasIndependentTimersActive = session.activeIndependentTimers
-
-        if let endOfDay = TimerSession.endOfDay(for: session.day) {
-            session.flush(at: endOfDay)
-        } else {
-            session.flush()
+        if let stale = result.staleSessionToLog {
+            logger.log(stale, labels: labels, independentLabels: independentLabels)
         }
-
-        session.activeLabelId = nil
-        session.activeStartedAt = nil
-        session.activeIndependentTimers = [:]
-
-        let withinLimit = TimerSession.daysBetween(session.day, today)
-            .map { $0 <= AppConstants.maxRetroactiveDays } ?? false
-        if withinLimit {
-            logger.log(session, labels: labels, independentLabels: independentLabels)
-        }
-
-        session = .fresh(day: today, labels: labels, independentLabels: independentLabels)
-
-        let midnight = TimerSession.startOfDay(for: today) ?? Date()
-        if let activeId = wasActive {
-            session.activeLabelId = activeId
-            session.activeStartedAt = midnight
-        }
-        for (id, _) in wasIndependentTimersActive {
-            session.activeIndependentTimers[id] = midnight
-        }
+        session = result.newSession
     }
 
     private func persist() {
