@@ -11,6 +11,7 @@ A lightweight macOS menu bar app for tracking time across work categories. Click
         * Elapsed hours can be modified manually in case you forget to start or stop a timer at the right moment.
         * Timers persist across app restarts within a given day, and totals are exported to a JSON log file at the end of each day.
     1. Independent timers: can run multiple at a time. No impact on daily total, but can be linked to auto-start a timesheet timer when activated.
+* Optional daily auto-stop: toggle it on in the popover and set the time in Settings. All running timers stop at that time; if the computer is asleep at that time, timers stay stopped on wake instead of resuming.
 * A timesheet summary view that shows your per-label raw and adjusted hours, seven days at a time, as a table.
 * Adjusted hours in past log files can be re-calculated within the app when raw hours for those files are updated manually.
 * App data can be exported and imported to save and load your customized settings across machines.
@@ -40,6 +41,12 @@ xcode-select --install
 # Launch
 open TimeTracker.app
 ```
+
+> With Command Line Tools only (no Xcode.app), the macOS 27+ SDK can't compile SwiftUI's
+> `@State` because its macro plugin ships only with Xcode. `build-app.sh` detects this and
+> builds against the newest installed SDK that works (e.g. `MacOSX26.5.sdk`). For `swift build`
+> or `swift test`, set it yourself:
+> `SDKROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk swift test`
 
 **Option B — Xcode project:**
 
@@ -125,6 +132,7 @@ TimeTracker/
 │   │                                 #   ~/.config/timetracker/config.json, env var, or App Support
 │   ├── LabelManager.swift            # Label CRUD operations and persistence
 │   ├── DayRolloverService.swift      # Pure day-boundary rollover logic
+│   ├── AutoStopSchedule.swift        # Pure daily auto-stop cutoff calculation
 │   ├── SleepWakeService.swift        # NSWorkspace sleep/wake + screen sleep/wake observer
 │   ├── SessionLogger.swift           # Builds SessionLog, writes logs, recalculates adjusted hours
 │   └── TickScheduler.swift           # 1-second tick + configurable persist-cycle callback

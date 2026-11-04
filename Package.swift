@@ -11,8 +11,10 @@ let package = Package(
         .executableTarget(
             name: "TimeTracker",
             path: "TimeTracker",
-            exclude: ["Info.plist", "TimeTracker.entitlements"],
-            resources: [.process("Resources")]
+            // Resources (the asset catalog) are excluded: compiling .xcassets needs actool,
+            // which only ships with full Xcode. build-app.sh generates AppIcon.icns from the
+            // PNG directly, and the xcodegen project handles the catalog itself.
+            exclude: ["Info.plist", "TimeTracker.entitlements", "Resources"]
         ),
         .testTarget(
             name: "TimeTrackerTests",

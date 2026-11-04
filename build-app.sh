@@ -5,6 +5,42 @@ set -euo pipefail
 # runtime (key: "timesheetDir"), falling back to the TIMESHEET_DIR environment
 # variable, then ~/Library/Application Support/TimeTracker.
 
+# Newer macOS SDKs (27+) implement SwiftUI's @State as a macro whose compiler plugin
+# (SwiftUIMacros) ships only with Xcode.app, not the Command Line Tools. When building
+# with CLT only and the default SDK needs that plugin, fall back to the newest installed
+# SDK that doesn't. Set SDKROOT yourself to override.
+sdk_needs_swiftui_macros() {
+    # SDKs that define `macro State` route every @State through the SwiftUIMacros plugin.
+    grep -rqs --include='*.swiftinterface' "public macro State(" \
+        "$1/System/Library/Frameworks/SwiftUICore.framework"
+}
+
+if [ -z "${SDKROOT:-}" ]; then
+    DEV_DIR="$(xcode-select -p)"
+    PLUGIN_DIR="${DEV_DIR}/usr/lib/swift/host/plugins"
+    DEFAULT_SDK="$(xcrun --show-sdk-path)"
+    if ! ls "${PLUGIN_DIR}"/*SwiftUIMacros* > /dev/null 2>&1 \
+        && sdk_needs_swiftui_macros "${DEFAULT_SDK}"; then
+        FALLBACK_SDK=""
+        # Real (non-symlink) versioned SDKs, newest first.
+        for sdk in $(ls -d "${DEV_DIR}"/SDKs/MacOSX[0-9]*.sdk 2>/dev/null | sort -rV); do
+            [ -L "${sdk}" ] && continue
+            if ! sdk_needs_swiftui_macros "${sdk}"; then
+                FALLBACK_SDK="${sdk}"
+                break
+            fi
+        done
+        if [ -z "${FALLBACK_SDK}" ]; then
+            echo "error: $(basename "${DEFAULT_SDK}") needs the SwiftUIMacros plugin, which is only in Xcode.app," >&2
+            echo "       and no older SDK is installed. Install Xcode, or set SDKROOT to a macOS 26 SDK." >&2
+            exit 1
+        fi
+        echo "Note: $(basename "$(readlink "${DEFAULT_SDK}" || echo "${DEFAULT_SDK}")") requires Xcode.app for SwiftUI macros;"
+        echo "      building against $(basename "${FALLBACK_SDK}") instead."
+        export SDKROOT="${FALLBACK_SDK}"
+    fi
+fi
+
 # Build the executable in release mode
 swift build -c release 2>&1
 
