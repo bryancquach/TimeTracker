@@ -48,6 +48,27 @@ struct SettingsView: View {
             }
 
             HStack {
+                Text("Auto-stop time")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+
+                Spacer()
+
+                DatePicker(
+                    "Auto-stop time",
+                    selection: Binding(
+                        get: { viewModel.autoStopTime },
+                        set: { viewModel.autoStopTime = $0 }
+                    ),
+                    displayedComponents: .hourAndMinute
+                )
+                .labelsHidden()
+                .datePickerStyle(.field)
+                .controlSize(.small)
+                .help("Time of day at which all timers are stopped when auto-stop is on")
+            }
+
+            HStack {
                 Text("Log directory")
                     .font(.callout)
                     .foregroundStyle(.secondary)

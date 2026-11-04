@@ -19,4 +19,13 @@ enum AppConstants {
 
     /// UserDefaults key for the custom log output directory.
     static let logDirectoryKey = "logDirectoryPath"
+
+    /// UserDefaults key for whether daily auto-stop is enabled.
+    static let autoStopEnabledKey = "autoStopEnabled"
+
+    /// UserDefaults key for the auto-stop time (minutes after local midnight).
+    static let autoStopMinutesKey = "autoStopMinutes"
+
+    /// Default auto-stop time: 5:00 PM.
+    static let defaultAutoStopMinutes: Int = 17 * 60
 }

@@ -46,6 +46,25 @@ struct TimerSession: Codable {
         }
     }
 
+    /// Stops every running timer, crediting time only up to `date`.
+    /// Timers that were started after `date` are left running.
+    mutating func stopTimers(at date: Date) {
+        if let activeId = activeLabelId, let startedAt = activeStartedAt, startedAt <= date {
+            accumulated[activeId, default: 0] += date.timeIntervalSince(startedAt)
+            activeLabelId = nil
+            activeStartedAt = nil
+        }
+        for (id, startedAt) in activeIndependentTimers where startedAt <= date {
+            independentAccumulated[id, default: 0] += date.timeIntervalSince(startedAt)
+            activeIndependentTimers.removeValue(forKey: id)
+        }
+    }
+
+    /// The earliest start time among all running timers, or nil if none are running.
+    var earliestActiveStart: Date? {
+        ([activeStartedAt].compactMap { $0 } + activeIndependentTimers.values).min()
+    }
+
     static func fresh(day: String, labels: [TimerLabel] = TimerLabel.defaults,
                       independentLabels: [IndependentTimerLabel] = IndependentTimerLabel.defaults) -> TimerSession {
         TimerSession(

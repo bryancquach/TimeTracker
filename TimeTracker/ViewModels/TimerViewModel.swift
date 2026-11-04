@@ -30,6 +30,34 @@ final class TimerViewModel {
         }
     }
 
+    /// Whether all timers are automatically stopped each day at `autoStopMinutes`.
+    var autoStopEnabled: Bool = UserDefaults.standard.bool(forKey: AppConstants.autoStopEnabledKey) {
+        didSet { UserDefaults.standard.set(autoStopEnabled, forKey: AppConstants.autoStopEnabledKey) }
+    }
+
+    /// Daily auto-stop time, in minutes after local midnight.
+    var autoStopMinutes: Int = TimerViewModel.storedAutoStopMinutes() {
+        didSet {
+            let clamped = AutoStopSchedule.clamp(autoStopMinutes)
+            if autoStopMinutes != clamped { autoStopMinutes = clamped }
+            UserDefaults.standard.set(autoStopMinutes, forKey: AppConstants.autoStopMinutesKey)
+        }
+    }
+
+    /// Auto-stop time as a `Date` (today), for binding to a time picker.
+    var autoStopTime: Date {
+        get { autoStopSchedule.cutoff(onDayOf: Date()) ?? Date() }
+        set {
+            let parts = Calendar.current.dateComponents([.hour, .minute], from: newValue)
+            autoStopMinutes = (parts.hour ?? 0) * 60 + (parts.minute ?? 0)
+        }
+    }
+
+    /// Localized short time string for the auto-stop time, e.g. "5:00 PM".
+    var autoStopTimeText: String {
+        autoStopTime.formatted(date: .omitted, time: .shortened)
+    }
+
     /// Updated every second to drive live elapsed-time display.
     private(set) var currentDate = Date()
 
@@ -42,6 +70,13 @@ final class TimerViewModel {
     private var sleepWakeService: SleepWakeService?
     private var wasActiveBeforeSleep: TimerLabel.ID?
     private var wasIndependentTimersActiveBeforeSleep: [IndependentTimerLabel.ID: Date] = [:]
+    /// Last moment the auto-stop cutoff was checked; a cutoff falling after this is "crossed".
+    /// Checked on each persist cycle (every minute), on wake, and before any timer mutation.
+    private var lastAutoStopCheck = Date()
+
+    private var autoStopSchedule: AutoStopSchedule {
+        AutoStopSchedule(minutesAfterMidnight: autoStopMinutes)
+    }
 
     // MARK: - Init
 
@@ -61,6 +96,14 @@ final class TimerViewModel {
         let today = TimerSession.todayString
 
         if var loaded = try? persistence.loadSession() {
+            // If the cutoff passed while the app wasn't running, stop timers at the cutoff.
+            if UserDefaults.standard.bool(forKey: AppConstants.autoStopEnabledKey),
+               let lastStart = loaded.earliestActiveStart {
+                let schedule = AutoStopSchedule(minutesAfterMidnight: Self.storedAutoStopMinutes())
+                if let cutoff = schedule.firstCutoff(after: lastStart, through: Date()) {
+                    loaded.stopTimers(at: cutoff)
+                }
+            }
             if loaded.day != today {
                 if let endOfDay = TimerSession.endOfDay(for: loaded.day) {
                     loaded.flush(at: endOfDay)
@@ -317,6 +360,27 @@ final class TimerViewModel {
         persist()
     }
 
+    // MARK: - Auto-Stop
+
+    /// Stops all timers if the daily cutoff has been crossed since the last check.
+    /// Also discards timers paused for sleep so they are not resumed on wake.
+    func checkAutoStop(now: Date = Date()) {
+        defer { lastAutoStopCheck = now }
+        guard autoStopEnabled,
+              let cutoff = autoStopSchedule.firstCutoff(after: lastAutoStopCheck, through: now)
+        else { return }
+
+        session.stopTimers(at: cutoff)
+        wasActiveBeforeSleep = nil
+        wasIndependentTimersActiveBeforeSleep = [:]
+        persist()
+    }
+
+    private static func storedAutoStopMinutes() -> Int {
+        let stored = UserDefaults.standard.object(forKey: AppConstants.autoStopMinutesKey) as? Int
+        return AutoStopSchedule.clamp(stored ?? AppConstants.defaultAutoStopMinutes)
+    }
+
     // MARK: - Log Summary
 
     func makeLogSummaryViewModel() -> LogSummaryViewModel {
@@ -326,6 +390,9 @@ final class TimerViewModel {
     // MARK: - Private Helpers
 
     private func flush() {
+        // Apply a pending auto-stop first so a flush between the minute checks
+        // can't move timer start times past the cutoff and dodge it.
+        checkAutoStop()
         session.flush()
     }
 
@@ -334,6 +401,7 @@ final class TimerViewModel {
             self?.currentDate = Date()
         }
         scheduler.onPersistCycle = { [weak self] in
+            self?.checkAutoStop()
             self?.checkDayRollover()
             self?.flush()
             self?.persist()
@@ -388,6 +456,8 @@ final class TimerViewModel {
     }
 
     private func handleWake() {
+        // Drops the paused-for-sleep timers if the cutoff passed while asleep.
+        checkAutoStop()
         checkDayRollover()
         var needsPersist = false
         if let labelId = wasActiveBeforeSleep {

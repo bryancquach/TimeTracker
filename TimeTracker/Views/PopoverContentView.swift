@@ -91,6 +91,15 @@ struct PopoverContentView: View {
 
                 Spacer()
 
+                Toggle(isOn: autoStopBinding) {
+                    Text("Auto-stop \(viewModel.autoStopTimeText)")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
+                .toggleStyle(.switch)
+                .controlSize(.mini)
+                .help("Stop all timers each day at \(viewModel.autoStopTimeText). Change the time in Settings.")
+
                 Button("Quit") {
                     NSApplication.shared.terminate(nil)
                 }
@@ -113,6 +122,13 @@ struct PopoverContentView: View {
         } message: {
             Text(viewModel.recalculateError ?? "")
         }
+    }
+
+    private var autoStopBinding: Binding<Bool> {
+        Binding(
+            get: { viewModel.autoStopEnabled },
+            set: { viewModel.autoStopEnabled = $0 }
+        )
     }
 
     private var showRecalculateErrorBinding: Binding<Bool> {
