@@ -11,11 +11,18 @@ enum AppConstants {
     /// Maximum number of days a stale session can be retroactively logged.
     static let maxRetroactiveDays: Int = 14
 
-    /// Default increment/decrement amount (hours) for the +/− buttons.
-    static let defaultTimeIncrementHours: Double = 0.1
+    /// Default increment/decrement amount (minutes) for the +/− buttons.
+    static let defaultTimeIncrementMinutes: Int = 6
 
-    /// UserDefaults key for the persisted time-increment setting.
-    static let timeIncrementKey = "timeIncrementHours"
+    /// Allowed range (minutes) for the increment/decrement amount.
+    static let timeIncrementMinutesRange: ClosedRange<Int> = 1...60
+
+    /// UserDefaults key for the persisted time-increment setting (minutes).
+    static let timeIncrementMinutesKey = "timeIncrementMinutes"
+
+    /// Legacy UserDefaults key for the time-increment setting stored in hours.
+    /// Read once to migrate existing settings to `timeIncrementMinutesKey`.
+    static let legacyTimeIncrementHoursKey = "timeIncrementHours"
 
     /// UserDefaults key for the custom log output directory.
     static let logDirectoryKey = "logDirectoryPath"

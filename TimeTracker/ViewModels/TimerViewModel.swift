@@ -21,14 +21,17 @@ final class TimerViewModel {
     /// User-configurable log output directory path, or nil for the default.
     var customLogDirectoryPath: String? = UserDefaults.standard.string(forKey: AppConstants.logDirectoryKey)
 
-    /// User-configurable increment/decrement amount (hours) for the +/− buttons.
-    var timeIncrementHours: Double = AppConstants.defaultTimeIncrementHours {
+    /// User-configurable increment/decrement amount (minutes) for the +/− buttons.
+    var timeIncrementMinutes: Int = TimerViewModel.storedTimeIncrementMinutes() {
         didSet {
-            let clamped = min(1.0, max(0.05, timeIncrementHours))
-            if timeIncrementHours != clamped { timeIncrementHours = clamped }
-            UserDefaults.standard.set(timeIncrementHours, forKey: AppConstants.timeIncrementKey)
+            let clamped = Self.clampIncrement(timeIncrementMinutes)
+            if timeIncrementMinutes != clamped { timeIncrementMinutes = clamped }
+            UserDefaults.standard.set(timeIncrementMinutes, forKey: AppConstants.timeIncrementMinutesKey)
         }
     }
+
+    /// The increment amount in hours, as used by `adjustTime(for:byHours:)`.
+    var timeIncrementHours: Double { Double(timeIncrementMinutes) / 60 }
 
     /// Whether all timers are automatically stopped each day at `autoStopMinutes`.
     var autoStopEnabled: Bool = UserDefaults.standard.bool(forKey: AppConstants.autoStopEnabledKey) {
@@ -122,11 +125,6 @@ final class TimerViewModel {
             }
         } else {
             session = .fresh(day: today, labels: loadedLabels, independentLabels: loadedIndependentLabels)
-        }
-
-        let saved = UserDefaults.standard.double(forKey: AppConstants.timeIncrementKey)
-        if saved >= 0.05 && saved <= 1.0 {
-            timeIncrementHours = saved
         }
 
         persist()
@@ -374,6 +372,27 @@ final class TimerViewModel {
         wasActiveBeforeSleep = nil
         wasIndependentTimersActiveBeforeSleep = [:]
         persist()
+    }
+
+    // MARK: - Time Increment Setting
+
+    static func clampIncrement(_ minutes: Int) -> Int {
+        let range = AppConstants.timeIncrementMinutesRange
+        return min(range.upperBound, max(range.lowerBound, minutes))
+    }
+
+    /// Loads the saved increment in minutes, migrating a legacy hours value if present.
+    static func storedTimeIncrementMinutes(defaults: UserDefaults = .standard) -> Int {
+        if let minutes = defaults.object(forKey: AppConstants.timeIncrementMinutesKey) as? Int {
+            return clampIncrement(minutes)
+        }
+        if let hours = defaults.object(forKey: AppConstants.legacyTimeIncrementHoursKey) as? Double, hours > 0 {
+            let migrated = clampIncrement(Int((hours * 60).rounded()))
+            defaults.set(migrated, forKey: AppConstants.timeIncrementMinutesKey)
+            defaults.removeObject(forKey: AppConstants.legacyTimeIncrementHoursKey)
+            return migrated
+        }
+        return AppConstants.defaultTimeIncrementMinutes
     }
 
     private static func storedAutoStopMinutes() -> Int {

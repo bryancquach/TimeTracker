@@ -470,3 +470,54 @@ struct TimerViewModelTests {
         #expect(viewModel.session.activeIndependentTimers[indLabel.id] == nil)
     }
 }
+
+@Suite("TimerViewModel time increment setting", .serialized)
+@MainActor
+struct TimeIncrementSettingTests {
+
+    private func makeDefaults() -> UserDefaults {
+        let name = "TimeTrackerTests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: name)!
+        defaults.removePersistentDomain(forName: name)
+        return defaults
+    }
+
+    @Test("Defaults to 6 minutes when nothing is stored")
+    func defaultValue() {
+        #expect(TimerViewModel.storedTimeIncrementMinutes(defaults: makeDefaults()) == 6)
+    }
+
+    @Test("Reads a stored minutes value, clamped to 1–60")
+    func storedMinutes() {
+        let defaults = makeDefaults()
+        defaults.set(15, forKey: AppConstants.timeIncrementMinutesKey)
+        #expect(TimerViewModel.storedTimeIncrementMinutes(defaults: defaults) == 15)
+        defaults.set(500, forKey: AppConstants.timeIncrementMinutesKey)
+        #expect(TimerViewModel.storedTimeIncrementMinutes(defaults: defaults) == 60)
+    }
+
+    @Test("Migrates a legacy hours value to minutes")
+    func migratesLegacyHours() {
+        let defaults = makeDefaults()
+        defaults.set(0.25, forKey: AppConstants.legacyTimeIncrementHoursKey)
+        #expect(TimerViewModel.storedTimeIncrementMinutes(defaults: defaults) == 15)
+        #expect(defaults.integer(forKey: AppConstants.timeIncrementMinutesKey) == 15)
+        #expect(defaults.object(forKey: AppConstants.legacyTimeIncrementHoursKey) == nil)
+    }
+
+    @Test("Setting clamps to 1–60 and converts to hours")
+    func clampsAndConverts() {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("TimeTrackerTests-\(UUID().uuidString)")
+        let viewModel = TimerViewModel(persistence: PersistenceService(baseURL: tempDir))
+        let original = viewModel.timeIncrementMinutes
+        defer { viewModel.timeIncrementMinutes = original }
+
+        viewModel.timeIncrementMinutes = 0
+        #expect(viewModel.timeIncrementMinutes == 1)
+        viewModel.timeIncrementMinutes = 90
+        #expect(viewModel.timeIncrementMinutes == 60)
+        viewModel.timeIncrementMinutes = 15
+        #expect(viewModel.timeIncrementHours == 0.25)
+    }
+}

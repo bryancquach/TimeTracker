@@ -19,32 +19,25 @@ struct SettingsView: View {
 
                 Spacer()
 
-                Button(action: {
-                    viewModel.timeIncrementHours = max(0.05, viewModel.timeIncrementHours - 0.05)
-                }) {
-                    Image(systemName: "minus")
-                        .font(.system(size: 9, weight: .semibold))
-                        .foregroundStyle(.secondary)
-                        .frame(width: 16, height: 16)
-                        .contentShape(Rectangle())
-                }
-                .hoverHighlight(hover: 0.08, horizontalPadding: 2, verticalPadding: 2, cornerRadius: 4)
+                TextField(
+                    "Minutes",
+                    value: Binding(
+                        get: { viewModel.timeIncrementMinutes },
+                        set: { viewModel.timeIncrementMinutes = $0 }
+                    ),
+                    format: .number
+                )
+                .labelsHidden()
+                .textFieldStyle(.roundedBorder)
+                .controlSize(.small)
+                .multilineTextAlignment(.trailing)
+                .monospacedDigit()
+                .frame(width: 44)
+                .help("Minutes added or removed by the +/− buttons (1–60). Press Return to apply.")
 
-                Text(String(format: "%.2fh", viewModel.timeIncrementHours))
+                Text("min")
                     .font(.callout)
-                    .monospacedDigit()
                     .foregroundStyle(.secondary)
-
-                Button(action: {
-                    viewModel.timeIncrementHours = min(1.0, viewModel.timeIncrementHours + 0.05)
-                }) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 9, weight: .semibold))
-                        .foregroundStyle(.secondary)
-                        .frame(width: 16, height: 16)
-                        .contentShape(Rectangle())
-                }
-                .hoverHighlight(hover: 0.08, horizontalPadding: 2, verticalPadding: 2, cornerRadius: 4)
             }
 
             HStack {
