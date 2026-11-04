@@ -98,13 +98,13 @@ struct TimerViewModelTests {
     func formattedHours() {
         viewModel.session.accumulated["project_1"] = 3600
         let result = viewModel.formattedHours(for: "project_1")
-        #expect(result == "1.00h")
+        #expect(result == "1h 00m")
     }
 
     @Test("formattedHours for zero seconds")
     func formattedHoursZero() {
         let result = viewModel.formattedHours(for: "project_1")
-        #expect(result == "0.00h")
+        #expect(result == "0h 00m")
     }
 
     @Test("totalFormattedHours sums all labels")
@@ -112,7 +112,7 @@ struct TimerViewModelTests {
         viewModel.session.accumulated["project_1"] = 3600
         viewModel.session.accumulated["project_2"] = 3600
         let result = viewModel.totalFormattedHours
-        #expect(result == "2.00h")
+        #expect(result == "2h 00m")
     }
 
     // MARK: - Independent Timers
@@ -178,14 +178,14 @@ struct TimerViewModelTests {
         viewModel.session.accumulated["project_1"] = 3600
         viewModel.session.independentAccumulated["independent_timer"] = 7200
         let result = viewModel.totalFormattedHours
-        #expect(result == "1.00h")
+        #expect(result == "1h 00m")
     }
 
     @Test("independentFormattedHours shows accumulated time for a specific independent timer")
     func independentFormattedHoursDisplay() {
         viewModel.session.independentAccumulated["independent_timer"] = 3600
         let result = viewModel.independentFormattedHours(for: "independent_timer")
-        #expect(result == "1.00h")
+        #expect(result == "1h 00m")
     }
 
     @Test("independentAccumulatedSeconds includes live elapsed for active independent timer")
@@ -270,14 +270,14 @@ struct TimerViewModelTests {
     func adjustTimeReflectedInDisplay() {
         viewModel.session.accumulated["project_1"] = 0
         viewModel.adjustTime(for: "project_1", byHours: 0.1)
-        #expect(viewModel.formattedHours(for: "project_1") == "0.10h")
+        #expect(viewModel.formattedHours(for: "project_1") == "0h 06m")
     }
 
     @Test("adjustTime is reflected in totalFormattedHours")
     func adjustTimeReflectedInTotal() {
         viewModel.session.accumulated["project_1"] = 3600
         viewModel.adjustTime(for: "project_2", byHours: 0.1)
-        #expect(viewModel.totalFormattedHours == "1.10h")
+        #expect(viewModel.totalFormattedHours == "1h 06m")
     }
 
     // MARK: - Reset
