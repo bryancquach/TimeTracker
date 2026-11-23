@@ -266,12 +266,20 @@ final class TimerViewModel {
         customLogDirectoryPath = nil
     }
 
-    func recalculateLog(at url: URL) {
-        do {
-            try logger.recalculateLogFile(at: url)
-        } catch {
-            recalculateError = error.localizedDescription
+    /// Recalculates each selected log file independently; a failure on one file
+    /// does not stop the rest. Any failures are reported together, per file.
+    func recalculateLogs(at urls: [URL]) {
+        var failures: [String] = []
+        for url in urls {
+            do {
+                try logger.recalculateLogFile(at: url)
+            } catch {
+                failures.append(urls.count > 1
+                    ? "\(url.lastPathComponent): \(error.localizedDescription)"
+                    : error.localizedDescription)
+            }
         }
+        recalculateError = failures.isEmpty ? nil : failures.joined(separator: "\n")
     }
 
     private func flashConfirmation() {

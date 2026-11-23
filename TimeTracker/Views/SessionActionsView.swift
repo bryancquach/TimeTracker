@@ -33,7 +33,7 @@ struct SessionActionsView: View {
                     onUpdate()
                 }
                 .hoverHighlight(default: 0.05)
-                .help("Recalculate adjusted hours for an existing log file if manual file changes were made to the raw hours")
+                .help("Recalculate adjusted hours for one or more existing log files if manual file changes were made to the raw hours")
 
                 Spacer()
 

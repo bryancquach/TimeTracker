@@ -469,6 +469,30 @@ struct TimerViewModelTests {
         #expect(viewModel.session.independentAccumulated[indLabel.id] == nil)
         #expect(viewModel.session.activeIndependentTimers[indLabel.id] == nil)
     }
+
+    // MARK: - Recalculate
+
+    @Test("Recalculates multiple log files and reports per-file failures")
+    func recalculateMultipleLogs() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("TimeTrackerRecalc-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let first = dir.appendingPathComponent("a.json")
+        let second = dir.appendingPathComponent("b.json")
+        let bad = dir.appendingPathComponent("bad.json")
+        viewModel.logSession(to: first)
+        viewModel.logSession(to: second)
+        try Data("not json".utf8).write(to: bad)
+
+        viewModel.recalculateLogs(at: [first, second])
+        #expect(viewModel.recalculateError == nil)
+
+        viewModel.recalculateLogs(at: [first, bad, second])
+        let error = try #require(viewModel.recalculateError)
+        #expect(error.contains("bad.json"))
+        #expect(!error.contains("a.json"))
+        #expect(!error.contains("b.json"))
+    }
 }
 
 @Suite("TimerViewModel time increment setting", .serialized)

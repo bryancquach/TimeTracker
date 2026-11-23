@@ -140,13 +140,14 @@ struct PopoverContentView: View {
 
     private func showRecalculatePanel() {
         FileDialogCoordinator.showOpenPanel(
-            title: "Select Log File to Update",
+            title: "Select Log Files to Update",
+            allowsMultipleSelection: true,
             allowedContentTypes: [.json],
             directoryURL: viewModel.logsDirectoryURL,
-            prompt: "Select"
-        ) { url in
+            prompt: "Update"
+        ) { urls in
             Task { @MainActor in
-                viewModel.recalculateLog(at: url)
+                viewModel.recalculateLogs(at: urls)
             }
         }
     }

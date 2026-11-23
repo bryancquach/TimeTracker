@@ -32,12 +32,40 @@ enum FileDialogCoordinator {
         level: NSWindow.Level = .floating,
         completion: @escaping (URL) -> Void
     ) {
+        showOpenPanel(
+            title: title,
+            canChooseFiles: canChooseFiles,
+            canChooseDirectories: canChooseDirectories,
+            canCreateDirectories: canCreateDirectories,
+            allowsMultipleSelection: false,
+            allowedContentTypes: allowedContentTypes,
+            directoryURL: directoryURL,
+            prompt: prompt,
+            level: level
+        ) { urls in
+            guard let url = urls.first else { return }
+            completion(url)
+        }
+    }
+
+    static func showOpenPanel(
+        title: String,
+        canChooseFiles: Bool = true,
+        canChooseDirectories: Bool = false,
+        canCreateDirectories: Bool = false,
+        allowsMultipleSelection: Bool,
+        allowedContentTypes: [UTType]? = nil,
+        directoryURL: URL? = nil,
+        prompt: String? = nil,
+        level: NSWindow.Level = .floating,
+        completion: @escaping ([URL]) -> Void
+    ) {
         let panel = NSOpenPanel()
         panel.title = title
         panel.canChooseFiles = canChooseFiles
         panel.canChooseDirectories = canChooseDirectories
         panel.canCreateDirectories = canCreateDirectories
-        panel.allowsMultipleSelection = false
+        panel.allowsMultipleSelection = allowsMultipleSelection
         if let types = allowedContentTypes {
             panel.allowedContentTypes = types
         }
@@ -49,8 +77,8 @@ enum FileDialogCoordinator {
         }
         panel.level = level
         panel.begin { response in
-            guard response == .OK, let url = panel.url else { return }
-            completion(url)
+            guard response == .OK, !panel.urls.isEmpty else { return }
+            completion(panel.urls)
         }
     }
 }
